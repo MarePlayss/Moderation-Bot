@@ -117,6 +117,35 @@ client.on('messageCreate', async message => {
         await message.channel.bulkDelete(count, true);
         message.reply(`✅ Deleted ${count} messages.`);
     }
+
+    if (command === 'help') {
+        const helpEmbed = {
+            color: 0x0099ff,
+            title: '🔧 Moderation Bot Commands',
+            description: 'Here are all available commands:',
+            fields: [
+                {
+                    name: '🔨 Moderation',
+                    value: '`$ban @user [reason]` - Ban a member\n`$kick @user [reason]` - Kick a member\n`$mute @user <time>` - Mute a member (e.g., 10m, 1h)\n`$unmute @user` - Unmute a member',
+                    inline: false
+                },
+                {
+                    name: '⚠️ Warnings',
+                    value: '`$warn @user <reason>` - Warn a member\n`$warnings @user` - Check warnings for a user\n`$clearwarnings @user` - Clear all warnings for a user',
+                    inline: false
+                },
+                {
+                    name: '🧹 Utility',
+                    value: '`$purge <number>` - Delete multiple messages\n`$help` - Show this help menu',
+                    inline: false
+                }
+            ],
+            footer: {
+                text: 'Bot Owner has access to all commands regardless of permissions'
+            }
+        };
+        message.reply({ embeds: [helpEmbed] });
+    }
 });
 
 client.once('ready', () => {
