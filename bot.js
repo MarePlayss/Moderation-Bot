@@ -18,6 +18,7 @@ const client = new Client({
 
 let warns = JSON.parse(fs.readFileSync('warns.json', 'utf8'));
 let mutes = JSON.parse(fs.readFileSync('mutes.json', 'utf8'));
+let afkUsers = {};
 
 function hasPermission(message, permission) {
     if (message.author.id === OWNER_ID) return true;
@@ -29,6 +30,23 @@ function missingPerm(message, permName) {
 }
 
 client.on('messageCreate', async message => {
+    // Check if user is returning from AFK
+    if (afkUsers[message.author.id] && !message.content.startsWith('$afk')) {
+        const afkData = afkUsers[message.author.id];
+        const timeDiff = Math.floor((Date.now() - afkData.time) / 1000 / 60); // minutes
+        delete afkUsers[message.author.id];
+        message.reply(`👋 Welcome back! You were AFK for ${timeDiff} minute(s): ${afkData.reason}`);
+    }
+
+    // Check if someone mentioned an AFK user
+    message.mentions.users.forEach(user => {
+        if (afkUsers[user.id]) {
+            const afkData = afkUsers[user.id];
+            const timeDiff = Math.floor((Date.now() - afkData.time) / 1000 / 60); // minutes
+            message.reply(`💤 ${user.username} is currently AFK (${timeDiff} minute(s) ago): ${afkData.reason}`);
+        }
+    });
+
     if (!message.content.startsWith('$') || message.author.bot) return;
 
     const args = message.content.slice(1).trim().split(/ +/);
@@ -41,6 +59,19 @@ client.on('messageCreate', async message => {
         if (!member) return message.reply("Please mention a user to ban.");
         await member.ban({ reason: args.slice(1).join(' ') || 'No reason provided' });
         message.reply(`✅ Banned ${member.user.tag}`);
+    }
+
+    if (command === 'unban') {
+        if (!hasPermission(message, PermissionsBitField.Flags.BanMembers))
+            return missingPerm(message, "Ban Members");
+        const userId = args[0];
+        if (!userId) return message.reply("Please provide a user ID to unban.");
+        try {
+            await message.guild.members.unban(userId);
+            message.reply(`✅ Unbanned user with ID: ${userId}`);
+        } catch (error) {
+            message.reply("❌ Could not unban user. Make sure the ID is correct and the user is banned.");
+        }
     }
 
     if (command === 'kick') {
@@ -118,6 +149,15 @@ client.on('messageCreate', async message => {
         message.reply(`✅ Deleted ${count} messages.`);
     }
 
+    if (command === 'afk') {
+        const reason = args.join(' ') || 'AFK';
+        afkUsers[message.author.id] = {
+            reason: reason,
+            time: Date.now()
+        };
+        message.reply(`✅ You are now AFK: ${reason}`);
+    }
+
     if (command === 'help') {
         const helpEmbed = {
             color: 0x0099ff,
@@ -126,7 +166,7 @@ client.on('messageCreate', async message => {
             fields: [
                 {
                     name: '🔨 Moderation',
-                    value: '`$ban @user [reason]` - Ban a member\n`$kick @user [reason]` - Kick a member\n`$mute @user <time>` - Mute a member (e.g., 10m, 1h)\n`$unmute @user` - Unmute a member',
+                    value: '`$ban @user [reason]` - Ban a member\n`$unban <user_id>` - Unban a user by ID\n`$kick @user [reason]` - Kick a member\n`$mute @user <time>` - Mute a member (e.g., 10m, 1h)\n`$unmute @user` - Unmute a member',
                     inline: false
                 },
                 {
@@ -136,7 +176,7 @@ client.on('messageCreate', async message => {
                 },
                 {
                     name: '🧹 Utility',
-                    value: '`$purge <number>` - Delete multiple messages\n`$help` - Show this help menu',
+                    value: '`$purge <number>` - Delete multiple messages\n`$afk [reason]` - Set yourself as AFK\n`$help` - Show this help menu',
                     inline: false
                 }
             ],
