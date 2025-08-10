@@ -1,0 +1,19 @@
+=== Discord Moderation Bot Setup ===
+
+1. Go to https://discord.com/developers/applications
+   - Create a new application
+   - Add a Bot user
+   - Enable SERVER MEMBERS INTENT and MESSAGE CONTENT INTENT
+   - Copy your bot token
+
+2. Go to Discord → User Settings → Advanced → Enable Developer Mode
+   - Right-click yourself → Copy User ID
+
+3. On https://replit.com create a new Node.js project
+   - Upload all files from this ZIP
+   - Open .env and set TOKEN and OWNER_ID
+
+4. In the Shell run:
+   npm install
+
+5. Press Run to start the bot
