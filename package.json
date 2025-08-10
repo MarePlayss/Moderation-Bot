@@ -1,8 +1,9 @@
+
 {
-  "name": "nodejs",
+  "name": "discord-mod-bot",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A Discord moderation bot",
+  "main": "bot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,6 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^22.13.11"
+    "discord.js": "^14.0.0",
+    "dotenv": "^16.0.0",
+    "ms": "^2.1.3"
   }
 }
