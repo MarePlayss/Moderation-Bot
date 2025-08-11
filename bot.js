@@ -666,7 +666,7 @@ client.once('ready', () => {
     console.log(`🔧 Advanced moderation features loaded`);
     
     // Set bot activity
-    client.user.setActivity('$help for commands', { type: 'WATCHING' });
+    client.user.setActivity('MarePlayss', { type: 'LISTENING' });
 });
 
 client.login(TOKEN);
