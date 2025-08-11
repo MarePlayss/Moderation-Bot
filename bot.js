@@ -7,6 +7,14 @@ const fs = require('fs');
 const TOKEN = process.env.TOKEN;
 const OWNER_ID = process.env.OWNER_ID;
 
+// Load additional owners from file
+let additionalOwners = [];
+try {
+    additionalOwners = JSON.parse(fs.readFileSync('owners.json', 'utf8'));
+} catch (error) {
+    fs.writeFileSync('owners.json', JSON.stringify([], null, 2));
+}
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -21,8 +29,12 @@ let mutes = JSON.parse(fs.readFileSync('mutes.json', 'utf8'));
 let afkUsers = {};
 
 function hasPermission(message, permission) {
-    if (message.author.id === OWNER_ID) return true;
+    if (message.author.id === OWNER_ID || additionalOwners.includes(message.author.id)) return true;
     return message.member.permissions.has(permission);
+}
+
+function isOwner(userId) {
+    return userId === OWNER_ID || additionalOwners.includes(userId);
 }
 
 function missingPerm(message, permName) {
@@ -158,6 +170,53 @@ client.on('messageCreate', async message => {
         message.reply(`✅ You are now AFK: ${reason}`);
     }
 
+    if (command === 'addowner') {
+        if (message.author.id !== OWNER_ID) 
+            return message.reply("❌ Only the main bot owner can add additional owners.");
+        const member = message.mentions.members.first();
+        if (!member) return message.reply("Please mention a user to add as owner.");
+        if (additionalOwners.includes(member.id)) 
+            return message.reply("❌ This user is already an additional owner.");
+        additionalOwners.push(member.id);
+        fs.writeFileSync('owners.json', JSON.stringify(additionalOwners, null, 2));
+        message.reply(`✅ Added ${member.user.tag} as an additional bot owner.`);
+    }
+
+    if (command === 'removeowner') {
+        if (message.author.id !== OWNER_ID) 
+            return message.reply("❌ Only the main bot owner can remove additional owners.");
+        const member = message.mentions.members.first();
+        if (!member) return message.reply("Please mention a user to remove as owner.");
+        const index = additionalOwners.indexOf(member.id);
+        if (index === -1) 
+            return message.reply("❌ This user is not an additional owner.");
+        additionalOwners.splice(index, 1);
+        fs.writeFileSync('owners.json', JSON.stringify(additionalOwners, null, 2));
+        message.reply(`✅ Removed ${member.user.tag} from additional bot owners.`);
+    }
+
+    if (command === 'removewarning') {
+        if (!hasPermission(message, PermissionsBitField.Flags.ManageMessages))
+            return missingPerm(message, "Manage Messages");
+        const member = message.mentions.members.first();
+        const warningIndex = parseInt(args[1]);
+        if (!member) return message.reply("Usage: $removewarning @user <warning_number>");
+        if (!warningIndex || warningIndex < 1) return message.reply("Please specify a valid warning number (starting from 1).");
+        
+        const userWarns = warns[member.id] || [];
+        if (userWarns.length === 0) return message.reply("❌ This user has no warnings.");
+        if (warningIndex > userWarns.length) return message.reply(`❌ This user only has ${userWarns.length} warning(s).`);
+        
+        const removedWarning = userWarns.splice(warningIndex - 1, 1)[0];
+        if (userWarns.length === 0) {
+            delete warns[member.id];
+        } else {
+            warns[member.id] = userWarns;
+        }
+        fs.writeFileSync('warns.json', JSON.stringify(warns, null, 2));
+        message.reply(`✅ Removed warning #${warningIndex} from ${member.user.tag}: "${removedWarning}"`);
+    }
+
     if (command === 'help') {
         const helpEmbed = {
             color: 0x0099ff,
@@ -171,7 +230,12 @@ client.on('messageCreate', async message => {
                 },
                 {
                     name: '⚠️ Warnings',
-                    value: '`$warn @user <reason>` - Warn a member\n`$warnings @user` - Check warnings for a user\n`$clearwarnings @user` - Clear all warnings for a user',
+                    value: '`$warn @user <reason>` - Warn a member\n`$warnings @user` - Check warnings for a user\n`$removewarning @user <number>` - Remove specific warning\n`$clearwarnings @user` - Clear all warnings for a user',
+                    inline: false
+                },
+                {
+                    name: '👑 Owner Commands',
+                    value: '`$addowner @user` - Add additional bot owner\n`$removeowner @user` - Remove additional bot owner',
                     inline: false
                 },
                 {
@@ -181,7 +245,7 @@ client.on('messageCreate', async message => {
                 }
             ],
             footer: {
-                text: 'Bot Owner has access to all commands regardless of permissions'
+                text: 'Main Owner and Additional Owners have access to all commands regardless of permissions'
             }
         };
         message.reply({ embeds: [helpEmbed] });
