@@ -1,0 +1,7 @@
+{
+  "enabled": false,
+  "antiSpam": false,
+  "antiLinks": false,
+  "antiCaps": false,
+  "badWords": []
+}
