@@ -664,6 +664,9 @@ client.on('messageCreate', async message => {
 client.once('ready', () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
     console.log(`🔧 Advanced moderation features loaded`);
+    
+    // Set bot activity
+    client.user.setActivity('$help for commands', { type: 'WATCHING' });
 });
 
 client.login(TOKEN);
