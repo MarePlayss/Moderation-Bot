@@ -68,21 +68,25 @@ client.on('messageCreate', async message => {
         if (!hasPermission(message, PermissionsBitField.Flags.BanMembers))
             return missingPerm(message, "Ban Members");
         const member = message.mentions.members.first();
-        if (!member) return message.reply("Please mention a user to ban.");
-        await member.ban({ reason: args.slice(1).join(' ') || 'No reason provided' });
-        message.reply(`✅ Banned ${member.user.tag}`);
+        if (!member) return message.reply("❌ Please mention a user to ban.");
+        try {
+            await member.ban({ reason: args.slice(1).join(' ') || 'No reason provided' });
+            message.reply(`✅ Successfully banned ${member.user.tag}`);
+        } catch (error) {
+            message.reply(`❌ Failed to ban ${member.user.tag}. Error: ${error.message}`);
+        }
     }
 
     if (command === 'unban') {
         if (!hasPermission(message, PermissionsBitField.Flags.BanMembers))
             return missingPerm(message, "Ban Members");
         const userId = args[0];
-        if (!userId) return message.reply("Please provide a user ID to unban.");
+        if (!userId) return message.reply("❌ Please provide a user ID to unban.");
         try {
             await message.guild.members.unban(userId);
-            message.reply(`✅ Unbanned user with ID: ${userId}`);
+            message.reply(`✅ Successfully unbanned user with ID: ${userId}`);
         } catch (error) {
-            message.reply("❌ Could not unban user. Make sure the ID is correct and the user is banned.");
+            message.reply(`❌ Failed to unban user. Error: ${error.message}`);
         }
     }
 
@@ -90,9 +94,13 @@ client.on('messageCreate', async message => {
         if (!hasPermission(message, PermissionsBitField.Flags.KickMembers))
             return missingPerm(message, "Kick Members");
         const member = message.mentions.members.first();
-        if (!member) return message.reply("Please mention a user to kick.");
-        await member.kick(args.slice(1).join(' ') || 'No reason provided');
-        message.reply(`✅ Kicked ${member.user.tag}`);
+        if (!member) return message.reply("❌ Please mention a user to kick.");
+        try {
+            await member.kick(args.slice(1).join(' ') || 'No reason provided');
+            message.reply(`✅ Successfully kicked ${member.user.tag}`);
+        } catch (error) {
+            message.reply(`❌ Failed to kick ${member.user.tag}. Error: ${error.message}`);
+        }
     }
 
     if (command === 'mute') {
@@ -100,65 +108,97 @@ client.on('messageCreate', async message => {
             return missingPerm(message, "Manage Roles");
         const member = message.mentions.members.first();
         const time = args[1];
-        if (!member || !time) return message.reply("Usage: $mute @user 10m");
-        const muteRole = message.guild.roles.cache.find(r => r.name === 'Muted') || 
-            await message.guild.roles.create({ name: 'Muted', permissions: [] });
-        await member.roles.add(muteRole);
-        mutes[member.id] = Date.now() + ms(time);
-        fs.writeFileSync('mutes.json', JSON.stringify(mutes, null, 2));
-        message.reply(`✅ Muted ${member.user.tag} for ${time}`);
+        if (!member || !time) return message.reply("❌ Usage: $mute @user 10m");
+        try {
+            const muteRole = message.guild.roles.cache.find(r => r.name === 'Muted') || 
+                await message.guild.roles.create({ name: 'Muted', permissions: [] });
+            await member.roles.add(muteRole);
+            mutes[member.id] = Date.now() + ms(time);
+            fs.writeFileSync('mutes.json', JSON.stringify(mutes, null, 2));
+            message.reply(`✅ Successfully muted ${member.user.tag} for ${time}`);
+        } catch (error) {
+            message.reply(`❌ Failed to mute ${member.user.tag}. Error: ${error.message}`);
+        }
     }
 
     if (command === 'unmute') {
         if (!hasPermission(message, PermissionsBitField.Flags.ManageRoles))
             return missingPerm(message, "Manage Roles");
         const member = message.mentions.members.first();
-        if (!member) return message.reply("Please mention a user to unmute.");
-        const muteRole = message.guild.roles.cache.find(r => r.name === 'Muted');
-        if (muteRole) await member.roles.remove(muteRole);
-        delete mutes[member.id];
-        fs.writeFileSync('mutes.json', JSON.stringify(mutes, null, 2));
-        message.reply(`✅ Unmuted ${member.user.tag}`);
+        if (!member) return message.reply("❌ Please mention a user to unmute.");
+        try {
+            const muteRole = message.guild.roles.cache.find(r => r.name === 'Muted');
+            if (muteRole) await member.roles.remove(muteRole);
+            delete mutes[member.id];
+            fs.writeFileSync('mutes.json', JSON.stringify(mutes, null, 2));
+            message.reply(`✅ Successfully unmuted ${member.user.tag}`);
+        } catch (error) {
+            message.reply(`❌ Failed to unmute ${member.user.tag}. Error: ${error.message}`);
+        }
     }
 
     if (command === 'warn') {
         if (!hasPermission(message, PermissionsBitField.Flags.ManageMessages))
             return missingPerm(message, "Manage Messages");
         const member = message.mentions.members.first();
-        if (!member) return message.reply("Please mention a user to warn.");
-        const reason = args.slice(1).join(' ') || 'No reason provided';
-        if (!warns[member.id]) warns[member.id] = [];
-        warns[member.id].push(reason);
-        fs.writeFileSync('warns.json', JSON.stringify(warns, null, 2));
-        message.reply(`⚠️ Warned ${member.user.tag}: ${reason}`);
+        if (!member) return message.reply("❌ Please mention a user to warn.");
+        try {
+            const reason = args.slice(1).join(' ') || 'No reason provided';
+            if (!warns[member.id]) warns[member.id] = [];
+            warns[member.id].push(reason);
+            fs.writeFileSync('warns.json', JSON.stringify(warns, null, 2));
+            message.reply(`✅ Successfully warned ${member.user.tag}: ${reason}`);
+        } catch (error) {
+            message.reply(`❌ Failed to warn ${member.user.tag}. Error: ${error.message}`);
+        }
     }
 
     if (command === 'warnings') {
         if (!hasPermission(message, PermissionsBitField.Flags.ManageMessages))
             return missingPerm(message, "Manage Messages");
         const member = message.mentions.members.first();
-        if (!member) return message.reply("Please mention a user.");
-        const userWarns = warns[member.id] || [];
-        message.reply(userWarns.length ? userWarns.join('\n') : "No warnings.");
+        if (!member) return message.reply("❌ Please mention a user.");
+        try {
+            const userWarns = warns[member.id] || [];
+            if (userWarns.length === 0) {
+                message.reply("✅ No warnings found for this user.");
+            } else {
+                message.reply(`✅ Warnings for ${member.user.tag}:\n${userWarns.map((warn, index) => `${index + 1}. ${warn}`).join('\n')}`);
+            }
+        } catch (error) {
+            message.reply(`❌ Failed to retrieve warnings. Error: ${error.message}`);
+        }
     }
 
     if (command === 'clearwarnings') {
         if (!hasPermission(message, PermissionsBitField.Flags.ManageMessages))
             return missingPerm(message, "Manage Messages");
         const member = message.mentions.members.first();
-        if (!member) return message.reply("Please mention a user.");
-        delete warns[member.id];
-        fs.writeFileSync('warns.json', JSON.stringify(warns, null, 2));
-        message.reply(`✅ Cleared warnings for ${member.user.tag}`);
+        if (!member) return message.reply("❌ Please mention a user.");
+        try {
+            if (!warns[member.id] || warns[member.id].length === 0) {
+                return message.reply(`❌ ${member.user.tag} has no warnings to clear.`);
+            }
+            delete warns[member.id];
+            fs.writeFileSync('warns.json', JSON.stringify(warns, null, 2));
+            message.reply(`✅ Successfully cleared all warnings for ${member.user.tag}`);
+        } catch (error) {
+            message.reply(`❌ Failed to clear warnings. Error: ${error.message}`);
+        }
     }
 
     if (command === 'purge') {
         if (!hasPermission(message, PermissionsBitField.Flags.ManageMessages))
             return missingPerm(message, "Manage Messages");
         const count = parseInt(args[0]);
-        if (!count) return message.reply("Please specify number of messages to delete.");
-        await message.channel.bulkDelete(count, true);
-        message.reply(`✅ Deleted ${count} messages.`);
+        if (!count || count < 1) return message.reply("❌ Please specify a valid number of messages to delete (1-100).");
+        if (count > 100) return message.reply("❌ Cannot delete more than 100 messages at once.");
+        try {
+            const deletedMessages = await message.channel.bulkDelete(count, true);
+            message.reply(`✅ Successfully deleted ${deletedMessages.size} messages.`);
+        } catch (error) {
+            message.reply(`❌ Failed to delete messages. Error: ${error.message}`);
+        }
     }
 
     if (command === 'afk') {
@@ -174,25 +214,33 @@ client.on('messageCreate', async message => {
         if (message.author.id !== OWNER_ID) 
             return message.reply("❌ Only the main bot owner can add additional owners.");
         const member = message.mentions.members.first();
-        if (!member) return message.reply("Please mention a user to add as owner.");
+        if (!member) return message.reply("❌ Please mention a user to add as owner.");
         if (additionalOwners.includes(member.id)) 
             return message.reply("❌ This user is already an additional owner.");
-        additionalOwners.push(member.id);
-        fs.writeFileSync('owners.json', JSON.stringify(additionalOwners, null, 2));
-        message.reply(`✅ Added ${member.user.tag} as an additional bot owner.`);
+        try {
+            additionalOwners.push(member.id);
+            fs.writeFileSync('owners.json', JSON.stringify(additionalOwners, null, 2));
+            message.reply(`✅ Successfully added ${member.user.tag} as an additional bot owner.`);
+        } catch (error) {
+            message.reply(`❌ Failed to add owner. Error: ${error.message}`);
+        }
     }
 
     if (command === 'removeowner') {
         if (message.author.id !== OWNER_ID) 
             return message.reply("❌ Only the main bot owner can remove additional owners.");
         const member = message.mentions.members.first();
-        if (!member) return message.reply("Please mention a user to remove as owner.");
+        if (!member) return message.reply("❌ Please mention a user to remove as owner.");
         const index = additionalOwners.indexOf(member.id);
         if (index === -1) 
             return message.reply("❌ This user is not an additional owner.");
-        additionalOwners.splice(index, 1);
-        fs.writeFileSync('owners.json', JSON.stringify(additionalOwners, null, 2));
-        message.reply(`✅ Removed ${member.user.tag} from additional bot owners.`);
+        try {
+            additionalOwners.splice(index, 1);
+            fs.writeFileSync('owners.json', JSON.stringify(additionalOwners, null, 2));
+            message.reply(`✅ Successfully removed ${member.user.tag} from additional bot owners.`);
+        } catch (error) {
+            message.reply(`❌ Failed to remove owner. Error: ${error.message}`);
+        }
     }
 
     if (command === 'removewarning') {
@@ -214,7 +262,7 @@ client.on('messageCreate', async message => {
             warns[member.id] = userWarns;
         }
         fs.writeFileSync('warns.json', JSON.stringify(warns, null, 2));
-        message.reply(`✅ Removed warning #${warningIndex} from ${member.user.tag}: "${removedWarning}"`);
+        message.reply(`✅ Successfully removed warning #${warningIndex} from ${member.user.tag}: "${removedWarning}"`);
     }
 
     if (command === 'help') {
