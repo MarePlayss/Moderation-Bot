@@ -665,8 +665,14 @@ client.once('ready', () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
     console.log(`🔧 Advanced moderation features loaded`);
     
-    // Set bot activity
-    client.user.setActivity('MarePlayss', { type: 'LISTENING' });
+    // Set bot status to online and activity
+    client.user.setPresence({
+        status: 'online',
+        activities: [{
+            name: 'MarePlayss',
+            type: 2 // LISTENING
+        }]
+    });
 });
 
 client.login(TOKEN);
